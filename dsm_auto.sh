@@ -22,3 +22,4 @@ fi
 # better way to get to .adf files
 # automatically make mask polygon
 # add exception handling for duplicate names
+# better file navigation
