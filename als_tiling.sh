@@ -2,12 +2,18 @@
 cd /data/gpfs/assoc/gears/scratch/thartsook
 
 # tile info
-LAS_DIRECTORY=$1
-#"/data/gpfs/assoc/gears/scratch/thartsook/als_test_registration/als_prefire/2-Correction"
-TEMP_DIRECTORY="/data/gpfs/assoc/gears/scratch/thartsook/als_test_registration/registration_temp"
-BUFFER_DIRECTORY=$2
-#"/data/gpfs/assoc/gears/scratch/thartsook/als_test_registration/output"
 PREFIX="USCAYF20180722f1a1"
+LAS_DIRECTORY=$1
+#"/data/gpfs/assoc/gears/scratch/thartsook/als_test_registration/als_prefire"
+TEMP_DIRECTORY="/data/gpfs/assoc/gears/scratch/thartsook/als_test_registration/registration_temp/"$3
+BUFFER_DIRECTORY=$2
+mkdir -p $2"/buffered"
+mkdir -p $2"/seamless" 
+#"/data/gpfs/assoc/gears/scratch/thartsook/als_test_registration/output"
+
+TEMP_DIRECTORY=$3
+mkdir -p $3
+#"/data/gpfs/assoc/gears/scratch/thartsook/als_test_registration/registration_temp"
 
 
 singularity exec lastools_build_9_19_license.sif lasindex -i "$LAS_DIRECTORY"/*.las
@@ -17,7 +23,7 @@ ls -d "$LAS_DIRECTORY/"*.las >> "$TEMP_DIRECTORY"/input.txt
 
 singularity exec lastools_build_9_19_license.sif las2las -lof "$TEMP_DIRECTORY"/input.txt -target_epsg 3310 -odir $TEMP_DIRECTORY -olas -odix _reproject
 
-rm "$TEMP_DIRECTORY"/reproject.txt
+rm "$TEMP_DIRECTORY"/input.txt
 ls -d "$TEMP_DIRECTORY/"*_reproject.las >> "$TEMP_DIRECTORY"/reproject.txt
 singularity exec lastools_build_9_19_license.sif lasindex -lof $TEMP_DIRECTORY/reproject.txt
 
@@ -48,4 +54,12 @@ singularity exec lastools_build_9_19_license.sif lasclassify -lof "$TEMP_DIRECTO
 # Remove buffer for a second set of tiles
 rm "$TEMP_DIRECTORY"/norm.txt
 ls -d "$BUFFER_DIRECTORY/"buffered/*_classify.las >> "$TEMP_DIRECTORY"/buffered.txt
-singularity exec lastools_build_9_19_license.sif lastile -lof "$TEMP_DIRECTORY"/buffered.txt -remove_buffer 100 -odix _seamless -odir "$BUFFER_DIRECTORY"/seamless
+singularity exec lastools_build_9_19_license.sif lastile -lof "$TEMP_DIRECTORY"/buffered.txt -remove_buffer -odix _seamless -odir "$BUFFER_DIRECTORY"/seamless
+
+# Run lasinfo to prepare for plot extraction
+singularity exec lastools_build_9_19_license.sif lasinfo -lof "$TEMP_DIRECTORY"/buffered.txt
+rm "$TEMP_DIRECTORY"/buffered.txt
+ls -d "$BUFFER_DIRECTORY/"seamless/*seamless.las >> "$TEMP_DIRECTORY"/seamless.txt
+singularity exec lastools_build_9_19_license.sif lasinfo -lof "$TEMP_DIRECTORY"/seamless.txt
+
+rm -r "$TEMP_DIRECTORY"/*
