@@ -11,8 +11,8 @@ mkdir -p $2"/buffered"
 mkdir -p $2"/seamless" 
 #"/data/gpfs/assoc/gears/scratch/thartsook/als_test_registration/output"
 
-TEMP_DIRECTORY=$3
-mkdir -p $3
+TEMP_DIRECTORY=$2"/_temp"
+mkdir -p $TEMP_DIRECTORY
 #"/data/gpfs/assoc/gears/scratch/thartsook/als_test_registration/registration_temp"
 
 
@@ -21,7 +21,7 @@ singularity exec lastools_build_9_19_license.sif lasindex -i "$LAS_DIRECTORY"/*.
 # reproject
 ls -d "$LAS_DIRECTORY/"*.las >> "$TEMP_DIRECTORY"/input.txt
 
-singularity exec lastools_build_9_19_license.sif las2las -lof "$TEMP_DIRECTORY"/input.txt -target_epsg 3310 -odir $TEMP_DIRECTORY -olas -odix _reproject
+singularity exec lastools_build_9_19_license.sif las2las -lof "$TEMP_DIRECTORY"/input.txt -utm 11n -wgs84 -target_epsg 3310 -odir $TEMP_DIRECTORY -olas -odix _reproject
 
 rm "$TEMP_DIRECTORY"/input.txt
 ls -d "$TEMP_DIRECTORY/"*_reproject.las >> "$TEMP_DIRECTORY"/reproject.txt
