@@ -79,7 +79,10 @@ rm "$TEMP_DIRECTORY"/buffered.txt
 ls -d "$BUFFER_DIRECTORY/"seamless/*seamless.las >> "$BUFFER_DIRECTORY"/seamless.txt
 singularity exec lastools_build_9_19_license.sif lasinfo -lof "$BUFFER_DIRECTORY"/seamless.txt
 
+# Lastile to build bigger tiles (could probably set this even higher than 1000
+# singularity exec lastools_build_9_19_license.sif lastile -lof /data/gpfs/assoc/gears/scratch/thartsook/als_test_registration/reproject_als_postfire_output/seamless.txt -cores 10 -tile_size 1000 -odir /data/gpfs/assoc/gears/scratch/thartsook/als_test_registration/reproject_als_postfire_output/merged
+
 # Lasclip to get stuff that intersects with the plots (in progress)
-singularity exec lastools_build_9_19_license.sif lasclip -lof "$BUFFER_DIRECTORY"/seamless.txt -poly $PLOTS -interior -odir "$BUFFER_DIRECTORY"/plot_clips
+#singularity exec lastools_build_9_19_license.sif lasclip -lof "$BUFFER_DIRECTORY"/seamless.txt -poly $PLOTS -interior -odir "$BUFFER_DIRECTORY"/plot_clips
 
 #rm -r "$TEMP_DIRECTORY"/*
