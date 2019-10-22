@@ -47,7 +47,7 @@ singularity exec lastools_build_9_19_license.sif lastile -lof $TEMP_DIRECTORY/co
 rm "$TEMP_DIRECTORY"/conversion.txt
 ls -d "$TEMP_DIRECTORY/"tiles/*.las >> "$TEMP_DIRECTORY"/tiles.txt
 mkdir -p $TEMP_DIRECTORY"/denoise"
-singularity exec lastools_build_9_19_license.sif lasnoise -lof "$TEMP_DIRECTORY"/tiles.txt -remove_noise -olas -odix _denoised -cores NUM_CORES -olas -odir $TEMP_DIRECTORY"/denoise"
+singularity exec lastools_build_9_19_license.sif lasnoise -lof "$TEMP_DIRECTORY"/tiles.txt -remove_noise -olas -odix _denoised -cores $NUM_CORES -olas -odir $TEMP_DIRECTORY"/denoise"
 	
     
 # Classify ground
@@ -60,7 +60,7 @@ singularity exec lastools_build_9_19_license.sif lasground -lof "$TEMP_DIRECTORY
 rm "$TEMP_DIRECTORY"/denoised.txt
 ls -d "$TEMP_DIRECTORY/"ground1/*_ground.las >> "$TEMP_DIRECTORY"/ground.txt	
 mkdir -p $TEMP_DIRECTORY"/height"
-singularity exec lastools_build_9_19_license.sif lasheight	-lof "$TEMP_DIRECTORY"/ground.txt -drop_below 0 -drop_above 100 -cores $NUM_CORES -olas -odix _norm -odir $TEMP_DIRECTORY"/height"
+singularity exec lastools_build_9_19_license.sif lasheight -lof "$TEMP_DIRECTORY"/ground.txt -drop_below 0 -drop_above 100 -cores $NUM_CORES -olas -odix _norm -odir $TEMP_DIRECTORY"/height"
 
 # Classify
 # "-ground_offset 0.2 -olaz"	
