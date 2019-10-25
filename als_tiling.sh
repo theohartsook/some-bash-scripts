@@ -27,7 +27,7 @@ PREFIX="USCAYF20180722f1a1"
 LAS_DIRECTORY=$1
 TEMP_DIRECTORY="/data/gpfs/assoc/gears/scratch/thartsook/tiling/temp"
 OUTPUT_DIRECTORY=$2
-LASTOOLS_SINGULARITY=gearslaboratory-gears-singularity-master-gears-lastools.simg
+LASTOOLS_SINGULARITY="gears-singularity_gears-lastools.sif"
 mkdir -p $2"/buffered"
 mkdir -p $2"/seamless" 
 mkdir -p $TEMP_DIRECTORY"/input"
