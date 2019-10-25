@@ -1,29 +1,48 @@
-# cd to my working directory
-cd /data/gpfs/assoc/gears/scratch/thartsook
+# Instructions
+# Arguments
+# This takes the input and output directories as arguments.
+    # Set those in the SBATCH script.
+#
+# Variables
+# PREFIX is for the outputs. Not fully implemented yet.
+# TEMP_DIRECTORY is where all the intermediate data goes. Needs a lot of space.
+# NUM_CORES sets how many threads you can use for parallel processing.
+    # Use nproc to use all threads available or set it to an explicit number.
+# LASTOOLS_SINGULARITY is the location of the newest LASTools image.
+#
+# Special notes
+# Reproject step needs to be very explicit. Make sure -utm and -wgs84 are accurate.
+    # Use epsg code for the target projection.
+# I don't recommend making tiles much bigger than 500 meters at the beginning.
+    # There's an additional lastile at the end if you want to make bigger tiles.
 
-# tile info
+
+
+
+# Preparation
+cd /data/gpfs/assoc/gears/scratch/thartsook
+singularity pull shub://gearslaboratory/gears-singularity:gears-lastools
+
 PREFIX="USCAYF20180722f1a1"
 LAS_DIRECTORY=$1
-TEMP_DIRECTORY="/data/gpfs/assoc/gears/scratch/thartsook/als_test_registration/registration_temp/"
-BUFFER_DIRECTORY=$2
+TEMP_DIRECTORY="/data/gpfs/assoc/gears/scratch/thartsook/tiling/temp"
+OUTPUT_DIRECTORY=$2
+LASTOOLS_SINGULARITY=gearslaboratory-gears-singularity-master-gears-lastools.simg
 mkdir -p $2"/buffered"
 mkdir -p $2"/seamless" 
-mkdir -p $2"/plot_tiles"
-#"/data/gpfs/assoc/gears/scratch/thartsook/als_test_registration/output"
-
-mkdir -p $TEMP_DIRECTORY
+mkdir -p $TEMP_DIRECTORY"/input"
 
 NUM_CORES=nproc
-PLOTS=/data/gpfs/assoc/gears/scratch/thartsook/als_test_registration/boundaries/plot_40m_buffer.shp
 
+cp $LAS_DIRECTORY/* $TEMP_DIRECTORY"/input"
 
-singularity exec lastools_build_9_19_license.sif lasindex -i "$LAS_DIRECTORY"/*.las
+singularity exec $LASTOOLS_SINGULARITY lasindex -i "$TEMP_DIRECTORY"/input/*.las
 
 # reproject
-ls -d "$LAS_DIRECTORY/"*.las >> "$TEMP_DIRECTORY"/input.txt
+ls -d "$TEMP_DIRECTORY"/input/*.las >> "$TEMP_DIRECTORY"/input.txt
 mkdir -p $TEMP_DIRECTORY"/reproject"
 
-singularity exec lastools_build_9_19_license.sif las2las -lof "$TEMP_DIRECTORY"/input.txt -utm 11n -wgs84 -target_epsg 3310 -odir $TEMP_DIRECTORY"/reproject" -olas -odix _reproject
+singularity exec $LASTOOLS_SINGULARITY las2las -lof "$TEMP_DIRECTORY"/input.txt -utm 10n -wgs84 -target_epsg 3310 -odir $TEMP_DIRECTORY"/reproject" -olas -odix _reproject
 
 # Convert to LAS 1.4
 
@@ -31,58 +50,54 @@ rm "$TEMP_DIRECTORY"/input.txt
 ls -d "$TEMP_DIRECTORY/"reproject/*_reproject.las >> "$TEMP_DIRECTORY"/reproject.txt
 
 mkdir -p $TEMP_DIRECTORY"/conversion"
-singularity exec lastools_build_9_19_license.sif las2las -lof "$TEMP_DIRECTORY"/reproject.txt -set_version 1.4 -odix _14 -odir $TEMP_DIRECTORY"/conversion"
+singularity exec $LASTOOLS_SINGULARITY las2las -lof "$TEMP_DIRECTORY"/reproject.txt -set_version 1.4 -odix _14 -odir $TEMP_DIRECTORY"/conversion"
 
 ls -d "$TEMP_DIRECTORY"conversion/*14.las >> "$TEMP_DIRECTORY"/conversion.txt
 
-singularity exec lastools_build_9_19_license.sif lasindex -lof $TEMP_DIRECTORY/conversion.txt
+singularity exec $LASTOOLS_SINGULARITY lasindex -lof $TEMP_DIRECTORY/conversion.txt
 
 # build tiles
 rm "$TEMP_DIRECTORY"/reproject.txt
 
 mkdir -p $TEMP_DIRECTORY"/tiles"
-singularity exec lastools_build_9_19_license.sif lastile -lof $TEMP_DIRECTORY/conversion.txt -files_are_flightlines -rescale 0.01 0.01 0.01 -tile_size 500 -buffer 50 -odir $TEMP_DIRECTORY"/tiles" -o $PREFIX"_tile.las"
+singularity exec $LASTOOLS_SINGULARITY lastile -lof $TEMP_DIRECTORY/conversion.txt -files_are_flightlines -rescale 0.01 0.01 0.01 -tile_size 500 -buffer 50 -odir $TEMP_DIRECTORY"/tiles" -o $PREFIX"_tile.las"
 
 # lasnoise
 rm "$TEMP_DIRECTORY"/conversion.txt
 ls -d "$TEMP_DIRECTORY/"tiles/*.las >> "$TEMP_DIRECTORY"/tiles.txt
 mkdir -p $TEMP_DIRECTORY"/denoise"
-singularity exec lastools_build_9_19_license.sif lasnoise -lof "$TEMP_DIRECTORY"/tiles.txt -remove_noise -olas -odix _denoised -cores $NUM_CORES -olas -odir $TEMP_DIRECTORY"/denoise"
+singularity exec $LASTOOLS_SINGULARITY lasnoise -lof "$TEMP_DIRECTORY"/tiles.txt -remove_noise -olas -odix _denoised -cores $NUM_CORES -olas -odir $TEMP_DIRECTORY"/denoise"
 	
     
 # Classify ground
 rm "$TEMP_DIRECTORY"/tiles.txt
 ls -d "$TEMP_DIRECTORY/"denoise/*_denoised.las >> "$TEMP_DIRECTORY"/denoised.txt
 mkdir -p $TEMP_DIRECTORY"/ground1"
-singularity exec lastools_build_9_19_license.sif lasground -lof "$TEMP_DIRECTORY"/denoised.txt -olas -odix _ground -ultra_fine -step 3 -cores $NUM_CORES -odir $TEMP_DIRECTORY"/ground1"
+singularity exec $LASTOOLS_SINGULARITY lasground -lof "$TEMP_DIRECTORY"/denoised.txt -olas -odix _ground -ultra_fine -step 3 -cores $NUM_CORES -odir $TEMP_DIRECTORY"/ground1"
 	
 # Get height
 rm "$TEMP_DIRECTORY"/denoised.txt
 ls -d "$TEMP_DIRECTORY/"ground1/*_ground.las >> "$TEMP_DIRECTORY"/ground.txt	
 mkdir -p $TEMP_DIRECTORY"/height"
-singularity exec lastools_build_9_19_license.sif lasheight -lof "$TEMP_DIRECTORY"/ground.txt -drop_below 0 -drop_above 100 -cores $NUM_CORES -olas -odix _norm -odir $TEMP_DIRECTORY"/height"
+singularity exec $LASTOOLS_SINGULARITY lasheight -lof "$TEMP_DIRECTORY"/ground.txt -drop_below 0 -drop_above 100 -cores $NUM_CORES -olas -odix _norm -odir $TEMP_DIRECTORY"/height"
 
 # Classify
 # "-ground_offset 0.2 -olaz"	
 rm "$TEMP_DIRECTORY"/ground.txt
 ls -d "$TEMP_DIRECTORY/"height/*_norm.las >> "$TEMP_DIRECTORY"/norm.txt
-singularity exec lastools_build_9_19_license.sif lasclassify -lof "$TEMP_DIRECTORY"/norm.txt -ground_offset 0.2 -cores $NUM_CORES -olas -odix _classify -odir "$BUFFER_DIRECTORY"/buffered
+singularity exec $LASTOOLS_SINGULARITY lasclassify -lof "$TEMP_DIRECTORY"/norm.txt -ground_offset 0.2 -cores $NUM_CORES -olas -odix _classify -odir "$OUTPUT_DIRECTORY"/buffered
 
 # Remove buffer for a second set of tiles
 rm "$TEMP_DIRECTORY"/norm.txt
-ls -d "$BUFFER_DIRECTORY/"buffered/*_classify.las >> "$TEMP_DIRECTORY"/buffered.txt
-singularity exec lastools_build_9_19_license.sif lastile -lof "$TEMP_DIRECTORY"/buffered.txt -remove_buffer -odix _seamless -odir "$BUFFER_DIRECTORY"/seamless
+ls -d "$OUTPUT_DIRECTORY/"buffered/*_classify.las >> "$TEMP_DIRECTORY"/buffered.txt
+singularity exec $LASTOOLS_SINGULARITY lastile -lof "$TEMP_DIRECTORY"/buffered.txt -remove_buffer -odix _seamless -odir "$OUTPUT_DIRECTORY"/seamless
 
-# Run lasinfo to prepare for plot extraction
-singularity exec lastools_build_9_19_license.sif lasinfo -lof "$TEMP_DIRECTORY"/buffered.txt
-rm "$TEMP_DIRECTORY"/buffered.txt
-ls -d "$BUFFER_DIRECTORY/"seamless/*seamless.las >> "$BUFFER_DIRECTORY"/seamless.txt
-singularity exec lastools_build_9_19_license.sif lasinfo -lof "$BUFFER_DIRECTORY"/seamless.txt
 
-# Lastile to build bigger tiles (could probably set this even higher than 1000
-# singularity exec lastools_build_9_19_license.sif lastile -lof /data/gpfs/assoc/gears/scratch/thartsook/als_test_registration/reproject_als_postfire_output/seamless.txt -cores 10 -tile_size 1000 -odir /data/gpfs/assoc/gears/scratch/thartsook/als_test_registration/reproject_als_postfire_output/merged
 
-# Lasclip to get stuff that intersects with the plots (in progress)
-#singularity exec lastools_build_9_19_license.sif lasclip -lof "$BUFFER_DIRECTORY"/seamless.txt -poly $PLOTS -interior -odir "$BUFFER_DIRECTORY"/plot_clips
+# Lastile to build bigger tiles (this would be something you set by hand)
+# singularity exec $LASTOOLS_SINGULARITY lastile -lof /data/gpfs/assoc/gears/scratch/thartsook/als_test_registration/reproject_als_postfire_output/seamless.txt -cores 10 -tile_size 1000 -odir /data/gpfs/assoc/gears/scratch/thartsook/als_test_registration/reproject_als_postfire_output/merged
 
 #rm -r "$TEMP_DIRECTORY"/*
+
+#todos
+# standardize quotations
