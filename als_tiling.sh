@@ -52,7 +52,7 @@ ls -d "$TEMP_DIRECTORY/"reproject/*_reproject.las >> "$TEMP_DIRECTORY"/reproject
 mkdir -p $TEMP_DIRECTORY"/conversion"
 singularity exec $LASTOOLS_SINGULARITY las2las -lof "$TEMP_DIRECTORY"/reproject.txt -set_version 1.4 -odix _14 -odir $TEMP_DIRECTORY"/conversion"
 
-ls -d "$TEMP_DIRECTORY"conversion/*14.las >> "$TEMP_DIRECTORY"/conversion.txt
+ls -d "$TEMP_DIRECTORY"/conversion/*14.las >> "$TEMP_DIRECTORY"/conversion.txt
 
 singularity exec $LASTOOLS_SINGULARITY lasindex -lof $TEMP_DIRECTORY/conversion.txt
 
