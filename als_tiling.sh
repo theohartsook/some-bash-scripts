@@ -101,3 +101,4 @@ singularity exec $LASTOOLS_SINGULARITY lastile -lof "$TEMP_DIRECTORY"/buffered.t
 
 #todos
 # standardize quotations
+# set positional arguments for utm and prefix
