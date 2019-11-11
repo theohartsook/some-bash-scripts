@@ -50,15 +50,15 @@ mkdir -p "$TEMP_DIRECTORY"/tls
 for filename in *.las; do
     plot_id=${filename:0:4}
     tls_ref="$plot_id"*REGISTERED*.las
-    las2las -i $filename -keep_random_fraction 0.1 -odir $TEMP_DIRECTORY -o "$plot_id"_UAV_downsample_01.las
-    las2las -i "$OUTPUT_TLS_2"/$tls_ref -keep_random_fraction 0.1 -odir $TEMP_DIRECTORY -o "$plot_id"_TLS_downsample_01.las
+    las2las -i $filename -keep_random_fraction 0.1 -odir "$TEMP_DIRECTORY"/uav -o "$plot_id"_UAV_downsample_01.las
+    las2las -i "$OUTPUT_TLS_2"/las/"$tls_ref" -keep_random_fraction 0.1 -odir "$TEMP_DIRECTORY"/tls -o "$plot_id"_TLS_downsample_01.las
 done
 
 cd "$TEMP_DIRECTORY"/uav
 for filename in *.las; do
     plot_id=${filename:0:4}
     tls_ref="$plot_id"_TLS_downsample_01.las
-    cloudcompare.CloudCompare -SILENT -C_EXPORT_FMT LAS -O $filename -O "$INPUT_DIRECTORY"/"$tls_ref" -ICP -MIN_ERROR_DIFF 1e-8 -RANDOM_SAMPLING_LIMIT 60000
+    cloudcompare.CloudCompare -SILENT -C_EXPORT_FMT LAS -O $filename -O "$TEMP_DIRECTORY"/tls/"$tls_ref" -ICP -MIN_ERROR_DIFF 1e-8 -RANDOM_SAMPLING_LIMIT 60000
     mv "$plot_id"*_REGISTRATION*.txt "$OUTPUT_UAV_2"/registration_matrix
 done
 
@@ -66,6 +66,6 @@ cd $INPUT_UAV_2
 for filename in *.las; do
     plot_id=${filename:0:4}
     matrix="$plot_id"*_REGISTRATION*.txt
-    cloudcompare.CloudCompare -SILENT -APPLY_TRANS "$OUTPUT_UAV_2"/registration_matrix/"$matrix"
-    mv "$plot_id"*_REGISTERED*.las "$OUTPUT_UAV_2"/las
+    cloudcompare.CloudCompare -SILENT -C_EXPORT_FMT LAS -O $filename -APPLY_TRANS "$OUTPUT_UAV_2"/registration_matrix/"$plot_id"*_REGISTRATION*.txt
+    mv "$plot_id"*_TRANSFORMED*.las "$OUTPUT_UAV_2"/las
 done
